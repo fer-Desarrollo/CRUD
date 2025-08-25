@@ -55,9 +55,9 @@
                             foreach ($roles as $rol): 
                                 // Asignar clase según el tipo de rol
                                 $cardClass = '';
-                                if ($rol->id_rol == 1) $cardClass = 'admin-card';
-                                elseif ($rol->id_rol == 2) $cardClass = 'client-card';
-                                elseif ($rol->id_rol == 3) $cardClass = 'employee-card';
+                                if ($rol->id_rol == 3) $cardClass = 'admin-card';
+                                elseif ($rol->id_rol == 1) $cardClass = 'client-card';
+                                elseif ($rol->id_rol == 2) $cardClass = 'employee-card';
                             ?>
                             <div class="col-md-6">
                                 <div class="card h-100 <?php echo $cardClass; ?> role-option" data-role-id="<?php echo $rol->id_rol; ?>">
@@ -66,9 +66,9 @@
                                         <p class="card-text text-muted small">
                                             <?php 
                                             // Descripción según el rol
-                                            if ($rol->id_rol == 1) echo 'Acceso completo al sistema';
-                                            elseif ($rol->id_rol == 2) echo 'Acceso a funciones de cliente';
-                                            elseif ($rol->id_rol == 3) echo 'Acceso a funciones de empleado';
+                                            if ($rol->id_rol == 3) echo 'Acceso completo al sistema';
+                                            elseif ($rol->id_rol == 1) echo 'Acceso a funciones de cliente';
+                                            elseif ($rol->id_rol == 2) echo 'Acceso a funciones de empleado';
                                             ?>
                                         </p>
                                         <button class="btn btn-outline-primary btn-sm">Seleccionar</button>

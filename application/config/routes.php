@@ -66,3 +66,15 @@ $route['dashboard'] = 'dashboard';
 $route['default_controller'] = 'auth/login';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
+
+
+//cliente
+
+$route['cliente'] = 'dashboard/cliente';
+$route['cliente/productos'] = 'cliente/productos';
+$route['cliente/comprar/(:num)'] = 'cliente/comprar/$1';
+$route['cliente/mis_compras'] = 'cliente/mis_compras';
+$route['cliente/perfil'] = 'cliente/perfil';
+$route['cliente/actualizar_perfil'] = 'cliente/actualizar_perfil';
+$route['cliente/ajax_obtener_datos_dashboard'] = 'cliente/ajax_obtener_datos_dashboard';
+$route['cliente/ajax_buscar_productos'] = 'cliente/ajax_buscar_productos';

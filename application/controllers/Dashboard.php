@@ -12,6 +12,9 @@ class Dashboard extends CI_Controller {
         if (!$this->session->userdata('rol_actual')) {
             redirect('auth/seleccionar_rol');
         }
+        
+        // Cargar modelos necesarios
+        $this->load->model('Usuario_model');
     }
 
     public function index() {
@@ -49,7 +52,11 @@ class Dashboard extends CI_Controller {
             redirect('dashboard');
         }
         
+        // Obtener datos del usuario para pasar a la vista
+        $id_usuario = $this->session->userdata('id_usuario');
+        $data['usuario'] = $this->Usuario_model->obtener_datos_usuario($id_usuario);
         $data['titulo'] = 'Panel de Cliente';
+        
         $this->load->view('templates/header', $data);
         $this->load->view('dashboard/cliente', $data);
         $this->load->view('templates/footer');

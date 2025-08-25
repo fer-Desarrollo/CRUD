@@ -79,7 +79,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="<?php echo site_url('cliente/compras'); ?>">
+                                <a class="nav-link" href="<?php echo site_url('cliente/mis_compras'); ?>">
                                     <i class="fas fa-history me-1"></i>Mis Compras
                                 </a>
                             </li>

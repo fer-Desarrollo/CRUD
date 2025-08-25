@@ -1,493 +1,251 @@
-<div class="row">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Productos Disponibles</h2>
-            <div class="d-flex">
-                <div class="input-group me-2" style="width: 300px;">
-                    <input type="text" id="search-input" class="form-control" placeholder="Buscar productos...">
-                    <button class="btn btn-outline-secondary" type="button" onclick="buscarProductos()">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-                <button class="btn btn-primary" onclick="verCarrito()">
-                    <i class="fas fa-shopping-cart me-1"></i>
-                    Carrito <span id="cart-count" class="badge bg-secondary">0</span>
+<div class="container">
+    <h1 class="mt-4">Catálogo de Productos</h1>
+    
+    <?php if ($this->session->flashdata('error')): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?php echo $this->session->flashdata('error'); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($this->session->flashdata('exito')): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <?php echo $this->session->flashdata('exito'); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    <?php endif; ?>
+    
+    <div class="row mt-4">
+        <div class="col-md-12 mb-3">
+            <div class="input-group">
+                <input type="text" class="form-control" id="buscar-producto" placeholder="Buscar productos por nombre o descripción...">
+                <button class="btn btn-outline-primary" type="button" id="btn-buscar">
+                    <i class="fas fa-search"></i> Buscar
                 </button>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Alerta para mensajes -->
-<div id="alerta-productos"></div>
-
-<!-- Filtros -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <label for="precio-min" class="form-label">Precio Mínimo</label>
-                        <input type="range" class="form-range" id="precio-min" min="0" max="1000" value="0" onchange="filtrarProductos()">
-                        <span id="precio-min-value">$0</span>
+    
+    <div class="row mt-4" id="lista-productos">
+        <?php foreach ($productos as $producto): ?>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 product-card">
+                    <div class="image-container" style="height: 250px; overflow: hidden;">
+                        <img src="<?php echo $producto->imagen; ?>" class="card-img-top img-fluid" alt="<?php echo $producto->nombre; ?>" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
-                    <div class="col-md-3">
-                        <label for="precio-max" class="form-label">Precio Máximo</label>
-                        <input type="range" class="form-range" id="precio-max" min="0" max="1000" value="1000" onchange="filtrarProductos()">
-                        <span id="precio-max-value">$1000</span>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="sort-by" class="form-label">Ordenar por</label>
-                        <select class="form-select" id="sort-by" onchange="filtrarProductos()">
-                            <option value="nombre">Nombre</option>
-                            <option value="precio_asc">Precio: Menor a Mayor</option>
-                            <option value="precio_desc">Precio: Mayor a Menor</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Stock</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="stock-disponible" checked onchange="filtrarProductos()">
-                            <label class="form-check-label" for="stock-disponible">Solo con stock</label>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title"><?php echo $producto->nombre; ?></h5>
+                        <p class="card-text flex-grow-1"><?php echo $producto->descripcion; ?></p>
+                        <div class="mt-auto">
+                            <p class="card-text"><strong>Precio: $<?php echo number_format($producto->precio, 2); ?></strong></p>
+                            <p class="card-text">Disponibles: <?php echo $producto->stock; ?></p>
                         </div>
+                    </div>
+                    <div class="card-footer">
+                        <?php if ($producto->stock > 0): ?>
+                            <button class="btn btn-primary w-100 btn-comprar"
+                                data-producto-id="<?php echo $producto->id_producto; ?>"
+                                data-producto-nombre="<?php echo $producto->nombre; ?>"
+                                data-producto-precio="<?php echo $producto->precio; ?>"
+                                data-producto-stock="<?php echo $producto->stock; ?>">
+                                <i class="fas fa-shopping-cart"></i> Comprar
+                            </button>
+                        <?php else: ?>
+                            <button class="btn btn-secondary w-100" disabled>
+                                <i class="fas fa-times-circle"></i> Agotado
+                            </button>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
-        </div>
+        <?php endforeach; ?>
     </div>
 </div>
 
-<!-- Lista de Productos -->
-<div class="row" id="productos-container">
-    <div class="col-12 text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Cargando productos...</span>
-        </div>
-        <p class="mt-2">Cargando productos...</p>
-    </div>
-</div>
-
-<!-- Modal del Carrito -->
-<div class="modal fade" id="carritoModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<!-- Modal -->
+<div class="modal fade" id="modalCompra" tabindex="-1" aria-labelledby="modalCompraLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Mi Carrito</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="modalCompraLabel">Confirmar Compra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body" id="carrito-body">
-                <!-- Contenido del carrito se carga via AJAX -->
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres comprar <strong id="producto-nombre-modal"></strong>?</p>
+                <div class="mb-3">
+                    <label for="cantidad" class="form-label">Cantidad:</label>
+                    <input type="number" class="form-control" id="cantidad" value="1" min="1" max="1">
+                    <small id="stock-disponible" class="form-text text-muted"></small>
+                </div>
+                <div class="mb-3">
+                    <label for="total" class="form-label">Total:</label>
+                    <input type="text" class="form-control" id="total" readonly>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Seguir comprando</button>
-                <button type="button" class="btn btn-primary" onclick="procesarCompra()">Finalizar Compra</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-confirmar-compra">Confirmar Compra</button>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-.producto-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    height: 100%;
-}
-.producto-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-.producto-imagen {
-    height: 200px;
-    object-fit: cover;
-    width: 100%;
-}
-.stock-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-.cantidad-input {
-    width: 60px;
-    text-align: center;
-}
-</style>
-
 <script>
-let carrito = JSON.parse(localStorage.getItem('carrito')) || [];
-let todosProductos = [];
+$(function() {
+    let productoActual = null;
+    let precioActual = 0;
 
-$(document).ready(function() {
-    cargarProductos();
-    actualizarContadorCarrito();
-});
-
-// === PRODUCTOS ===
-function cargarProductos() {
-    $('#productos-container').html(`
-        <div class="col-12 text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando productos...</span>
-            </div>
-            <p class="mt-2">Cargando productos...</p>
-        </div>
-    `);
-
-    $.ajax({
-        url: '<?php echo site_url('cliente/obtener_productos'); ?>',
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                todosProductos = response.data;
-                mostrarProductos(todosProductos);
-            } else {
-                $('#productos-container').html(`
-                    <div class="col-12 text-center py-5">
-                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                        <p>Error al cargar los productos</p>
-                    </div>
-                `);
-            }
-        },
-        error: function() {
-            $('#productos-container').html(`
-                <div class="col-12 text-center py-5">
-                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                    <p>Error de conexión</p>
-                </div>
-            `);
-        }
+    // Buscar productos
+    $('#btn-buscar').click(buscarProductos);
+    $('#buscar-producto').keypress(function(e) {
+        if (e.which == 13) buscarProductos();
     });
-}
 
-function mostrarProductos(productos) {
-    if (productos.length === 0) {
-        $('#productos-container').html(`
-            <div class="col-12 text-center py-5">
-                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-                <p>No se encontraron productos</p>
+    function buscarProductos() {
+        const termino = $('#buscar-producto').val();
+        $('#lista-productos').html(`
+            <div class="col-md-12 text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">Buscando productos...</p>
             </div>
         `);
-        return;
-    }
 
-    let html = '';
-    productos.forEach(producto => {
-        const enCarrito = carrito.find(item => item.id_producto === producto.id_producto);
-        const cantidadCarrito = enCarrito ? enCarrito.cantidad : 0;
-        
-        html += `
-            <div class="col-md-4 mb-4">
-                <div class="card producto-card">
-                    <div class="position-relative">
-                        <img src="${producto.imagen}" class="producto-imagen card-img-top" alt="${producto.nombre}" 
-                             onerror="this.src='https://via.placeholder.com/300x200?text=Imagen+no+disponible'">
-                        <span class="badge ${producto.stock > 0 ? 'bg-success' : 'bg-danger'} stock-badge">
-                            ${producto.stock > 0 ? 'En stock' : 'Sin stock'}
-                        </span>
-                    </div>
-                    <div class="card-body">
-                        <h5 class="card-title">${producto.nombre}</h5>
-                        <p class="card-text text-muted">${producto.descripcion}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="h5 text-primary">$${producto.precio}</span>
-                            <span class="text-muted">Stock: ${producto.stock}</span>
-                        </div>
-                        <div class="mt-3">
-                            ${producto.stock > 0 ? `
-                                <div class="input-group">
-                                    <button class="btn btn-outline-secondary" onclick="cambiarCantidad(${producto.id_producto}, -1)" ${cantidadCarrito <= 0 ? 'disabled' : ''}>
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                    <input type="number" class="form-control cantidad-input" id="cantidad-${producto.id_producto}" 
-                                           value="${cantidadCarrito}" min="0" max="${producto.stock}" 
-                                           onchange="actualizarCantidad(${producto.id_producto}, this.value)">
-                                    <button class="btn btn-outline-secondary" onclick="cambiarCantidad(${producto.id_producto}, 1)" ${cantidadCarrito >= producto.stock ? 'disabled' : ''}>
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                    <button class="btn btn-primary" onclick="agregarAlCarrito(${producto.id_producto})">
-                                        <i class="fas fa-cart-plus"></i>
-                                    </button>
+        $.post("<?php echo site_url('cliente/buscar_productos'); ?>", { termino: termino }, function(response) {
+            let html = '';
+            if (response.length > 0) {
+                response.forEach(producto => {
+                    html += `
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 product-card">
+                                <div class="image-container" style="height:250px;overflow:hidden;">
+                                    <img src="${producto.imagen}" class="card-img-top img-fluid" alt="${producto.nombre}" style="width:100%;height:100%;object-fit:cover;">
                                 </div>
-                            ` : `
-                                <button class="btn btn-outline-secondary w-100" disabled>
-                                    Sin stock
-                                </button>
-                            `}
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">${producto.nombre}</h5>
+                                    <p class="card-text flex-grow-1">${producto.descripcion}</p>
+                                    <div class="mt-auto">
+                                        <p class="card-text"><strong>Precio: $${parseFloat(producto.precio).toFixed(2)}</strong></p>
+                                        <p class="card-text">Disponibles: ${producto.stock}</p>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    ${producto.stock > 0 ?
+                                        `<button class="btn btn-primary w-100 btn-comprar"
+                                            data-producto-id="${producto.id_producto}"
+                                            data-producto-nombre="${producto.nombre}"
+                                            data-producto-precio="${producto.precio}"
+                                            data-producto-stock="${producto.stock}">
+                                            <i class="fas fa-shopping-cart"></i> Comprar
+                                        </button>` :
+                                        `<button class="btn btn-secondary w-100" disabled>
+                                            <i class="fas fa-times-circle"></i> Agotado
+                                        </button>`}
+                                </div>
+                            </div>
                         </div>
+                    `;
+                });
+            } else {
+                html = `
+                    <div class="col-md-12 text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No se encontraron productos</h4>
+                        <p class="text-muted">Intenta con otros términos</p>
                     </div>
+                `;
+            }
+            $('#lista-productos').html(html);
+            $('.btn-comprar').click(abrirModalCompra);
+        }, "json").fail(function() {
+            $('#lista-productos').html(`
+                <div class="col-md-12 text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                    <h4 class="text-danger">Error al buscar productos</h4>
+                    <p class="text-muted">Intenta nuevamente</p>
                 </div>
-            </div>
-        `;
-    });
-
-    $('#productos-container').html(html);
-}
-
-// === CARRITO ===
-function agregarAlCarrito(idProducto) {
-    const producto = todosProductos.find(p => p.id_producto === idProducto);
-    const cantidad = parseInt($(`#cantidad-${idProducto}`).val());
-    
-    if (cantidad <= 0) {
-        mostrarAlerta('error', 'Selecciona una cantidad válida');
-        return;
-    }
-    if (cantidad > producto.stock) {
-        mostrarAlerta('error', 'No hay suficiente stock disponible');
-        return;
-    }
-
-    const itemExistente = carrito.find(item => item.id_producto === idProducto);
-    if (itemExistente) {
-        itemExistente.cantidad = cantidad;
-    } else {
-        carrito.push({
-            id_producto: producto.id_producto,
-            nombre: producto.nombre,
-            precio: producto.precio,
-            imagen: producto.imagen,
-            cantidad: cantidad,
-            stock: producto.stock
+            `);
         });
     }
 
-    guardarCarrito();
-    actualizarContadorCarrito();
-    mostrarAlerta('success', 'Producto agregado al carrito');
-}
+    // Abrir modal compra
+    function abrirModalCompra() {
+        productoActual = $(this).data('producto-id');
+        const productoNombre = $(this).data('producto-nombre');
+        precioActual = parseFloat($(this).data('producto-precio'));
+        const stock = parseInt($(this).data('producto-stock'));
 
-function cambiarCantidad(idProducto, cambio) {
-    const input = $(`#cantidad-${idProducto}`);
-    let nuevaCantidad = parseInt(input.val()) + cambio;
-    const producto = todosProductos.find(p => p.id_producto === idProducto);
-    
-    if (nuevaCantidad >= 0 && nuevaCantidad <= producto.stock) {
-        input.val(nuevaCantidad);
+        $('#producto-nombre-modal').text(productoNombre);
+        $('#cantidad').val(1).attr('max', stock);
+        $('#stock-disponible').text(`Stock disponible: ${stock}`);
+        $('#total').val('$' + precioActual.toFixed(2));
+        $('#modalCompra').modal('show');
     }
 
-    // Si ya está en carrito, actualizarlo
-    const item = carrito.find(item => item.id_producto === idProducto);
-    if (item) {
-        item.cantidad = nuevaCantidad;
-        guardarCarrito();
-        actualizarContadorCarrito();
-    }
-}
+    $('#cantidad').on('input', function() {
+        let cantidad = parseInt($(this).val()) || 1;
+        const max = parseInt($(this).attr('max'));
+        if (cantidad > max) cantidad = max;
+        if (cantidad < 1) cantidad = 1;
+        $(this).val(cantidad);
+        $('#total').val('$' + (precioActual * cantidad).toFixed(2));
+    });
 
-function actualizarCantidad(idProducto, cantidad) {
-    cantidad = parseInt(cantidad);
-    const producto = todosProductos.find(p => p.id_producto === idProducto);
-    
-    if (isNaN(cantidad) || cantidad < 0) {
-        $(`#cantidad-${idProducto}`).val(0);
-    } else if (cantidad > producto.stock) {
-        $(`#cantidad-${idProducto}`).val(producto.stock);
-        mostrarAlerta('warning', 'No puedes agregar más del stock disponible');
-    }
-}
+    $('#btn-confirmar-compra').click(function() {
+        const cantidad = parseInt($('#cantidad').val());
+        $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Procesando...');
 
-function guardarCarrito() {
-    localStorage.setItem('carrito', JSON.stringify(carrito));
-}
+        $.post("<?php echo site_url('cliente/comprar_producto'); ?>", {
+            id_producto: productoActual,
+            cantidad: cantidad
+        }, function(response) {
+            $('#modalCompra').modal('hide');
+            $('#btn-confirmar-compra').prop('disabled', false).html('Confirmar Compra');
 
-function actualizarContadorCarrito() {
-    const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
-    $('#cart-count').text(totalItems);
-}
+            if (response.success) {
+                mostrarMensaje('success', response.message);
+                setTimeout(buscarProductos, 2000);
+            } else {
+                mostrarMensaje('error', response.message);
+            }
+        }, "json").fail(function() {
+            $('#modalCompra').modal('hide');
+            $('#btn-confirmar-compra').prop('disabled', false).html('Confirmar Compra');
+            mostrarMensaje('error', 'Error al procesar la compra');
+        });
+    });
 
-function verCarrito() {
-    if (carrito.length === 0) {
-        mostrarAlerta('info', 'Tu carrito está vacío');
-        return;
-    }
-
-    let html = '';
-    let total = 0;
-
-    carrito.forEach(item => {
-        const subtotal = item.precio * item.cantidad;
-        total += subtotal;
-        
-        html += `
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-2">
-                            <img src="${item.imagen}" class="img-fluid rounded" style="height: 60px; object-fit: cover;" 
-                                 onerror="this.src='https://via.placeholder.com/60x60?text=Imagen'">
-                        </div>
-                        <div class="col-md-4">
-                            <h6 class="mb-0">${item.nombre}</h6>
-                            <small class="text-muted">$${item.precio} c/u</small>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="input-group input-group-sm">
-                                <button class="btn btn-outline-secondary" onclick="cambiarCantidadCarrito(${item.id_producto}, -1)">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <input type="number" class="form-control text-center" value="${item.cantidad}" 
-                                       onchange="actualizarCantidadCarrito(${item.id_producto}, this.value)" min="1" max="${item.stock}">
-                                <button class="btn btn-outline-secondary" onclick="cambiarCantidadCarrito(${item.id_producto}, 1)">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <span class="fw-bold">$${subtotal.toFixed(2)}</span>
-                        </div>
-                        <div class="col-md-1 text-end">
-                            <button class="btn btn-sm btn-danger" onclick="eliminarDelCarrito(${item.id_producto})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+    function mostrarMensaje(tipo, mensaje) {
+        const clase = tipo === 'success' ? 'alert-success' : 'alert-danger';
+        const html = `
+            <div class="alert ${clase} alert-dismissible fade show" role="alert">
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
-    });
-
-    html += `
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <h5>Total: $${total.toFixed(2)}</h5>
-            <button class="btn btn-danger" onclick="vaciarCarrito()">
-                <i class="fas fa-trash me-1"></i>Vaciar Carrito
-            </button>
-        </div>
-    `;
-
-    $('#carrito-body').html(html);
-    new bootstrap.Modal(document.getElementById('carritoModal')).show();
-}
-
-function cambiarCantidadCarrito(idProducto, cambio) {
-    const item = carrito.find(item => item.id_producto === idProducto);
-    if (item) {
-        const nuevaCantidad = item.cantidad + cambio;
-        if (nuevaCantidad >= 1 && nuevaCantidad <= item.stock) {
-            item.cantidad = nuevaCantidad;
-            guardarCarrito();
-            actualizarContadorCarrito();
-            verCarrito();
-        }
-    }
-}
-
-function actualizarCantidadCarrito(idProducto, cantidad) {
-    cantidad = parseInt(cantidad);
-    const item = carrito.find(item => item.id_producto === idProducto);
-    if (item && !isNaN(cantidad) && cantidad >= 1 && cantidad <= item.stock) {
-        item.cantidad = cantidad;
-        guardarCarrito();
-        actualizarContadorCarrito();
-        verCarrito();
-    }
-}
-
-function eliminarDelCarrito(idProducto) {
-    carrito = carrito.filter(item => item.id_producto !== idProducto);
-    guardarCarrito();
-    actualizarContadorCarrito();
-    cargarProductos();
-    verCarrito();
-}
-
-function vaciarCarrito() {
-    carrito = [];
-    guardarCarrito();
-    actualizarContadorCarrito();
-    cargarProductos();
-    $('#carritoModal').modal('hide');
-}
-
-function procesarCompra() {
-    if (carrito.length === 0) {
-        mostrarAlerta('error', 'El carrito está vacío');
-        return;
+        $('.alert').remove();
+        $('.container h1').after(html);
+        setTimeout(() => $('.alert').alert('close'), 5000);
     }
 
-    $('#alerta-productos').html(`
-        <div class="alert alert-info">
-            <i class="fas fa-spinner fa-spin me-2"></i>
-            Procesando compra...
-        </div>
-    `);
-
-    $.ajax({
-        url: '<?php echo site_url('cliente/procesar_compra'); ?>',
-        type: 'POST',
-        data: { productos: JSON.stringify(carrito) },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                mostrarAlerta('success', '¡Compra realizada exitosamente!');
-                carrito = [];
-                guardarCarrito();
-                actualizarContadorCarrito();
-                cargarProductos();
-                $('#carritoModal').modal('hide'); // Solo cerrar si éxito
-            } else {
-                mostrarAlerta('error', response.message || 'Error al procesar la compra');
-            }
-        },
-        error: function() {
-            mostrarAlerta('error', 'Error de conexión al procesar la compra');
-        }
-    });
-}
-
-// === FILTROS ===
-function buscarProductos() {
-    const termino = $('#search-input').val().toLowerCase();
-    const productosFiltrados = todosProductos.filter(producto =>
-        producto.nombre.toLowerCase().includes(termino) ||
-        producto.descripcion.toLowerCase().includes(termino)
-    );
-    mostrarProductos(productosFiltrados);
-}
-
-function filtrarProductos() {
-    const precioMin = parseInt($('#precio-min').val());
-    const precioMax = parseInt($('#precio-max').val());
-    const soloConStock = $('#stock-disponible').is(':checked');
-    const orden = $('#sort-by').val();
-
-    $('#precio-min-value').text('$' + precioMin);
-    $('#precio-max-value').text('$' + precioMax);
-
-    let productosFiltrados = todosProductos.filter(producto =>
-        producto.precio >= precioMin && producto.precio <= precioMax
-    );
-
-    if (soloConStock) {
-        productosFiltrados = productosFiltrados.filter(producto => producto.stock > 0);
-    }
-
-    switch (orden) {
-        case 'precio_asc': productosFiltrados.sort((a, b) => a.precio - b.precio); break;
-        case 'precio_desc': productosFiltrados.sort((a, b) => b.precio - a.precio); break;
-        case 'nombre': productosFiltrados.sort((a, b) => a.nombre.localeCompare(b.nombre)); break;
-    }
-
-    mostrarProductos(productosFiltrados);
-}
-
-// === ALERTAS ===
-function mostrarAlerta(tipo, mensaje) {
-    let icono;
-    switch (tipo) {
-        case 'success': icono = 'check-circle'; break;
-        case 'error': icono = 'times-circle'; break;
-        case 'warning': icono = 'exclamation-triangle'; break;
-        default: icono = 'info-circle';
-    }
-    
-    $('#alerta-productos').html(`
-        <div class="alert alert-${tipo === 'error' ? 'danger' : tipo} alert-dismissible fade show" role="alert">
-            <i class="fas fa-${icono} me-2"></i>
-            ${mensaje}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `);
-}
+    $('.btn-comprar').click(abrirModalCompra);
+});
 </script>
+
+<style>
+.product-card {
+    transition: transform .2s, box-shadow .2s;
+}
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.image-container {
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-comprar { transition: transform .2s; }
+.btn-comprar:hover { transform: scale(1.05); }
+.card-body { min-height: 200px; }
+</style>
