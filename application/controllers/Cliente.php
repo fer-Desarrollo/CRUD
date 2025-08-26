@@ -5,24 +5,50 @@ class Cliente extends CI_Controller {
 
     public function __construct() {
         parent::__construct();
-        // Verificar autenticación y rol de cliente
         if (!$this->session->userdata('logged_in') || $this->session->userdata('rol_actual') != 1) {
             redirect('dashboard');
         }
-
-        // Cargar modelos
         $this->load->model('Usuario_model');
         $this->load->model('Producto_model');
         $this->load->model('Venta_model');
         $this->load->library('form_validation');
     }
 
+   /*=========================================  MIS COMPRAS  ============================================================ */ 
+    // Vista
+    public function mis_compras() {
+        $id_usuario = $this->session->userdata('id_usuario');
+        $data['usuario'] = $this->Usuario_model->obtener_datos_usuario($id_usuario);
+        $data['titulo']  = 'Mis Compras';
+
+        $this->load->view('templates/header', $data);
+        $this->load->view('cliente/mis_compras', $data);
+        $this->load->view('templates/footer');
+    }
+
+    // Obtener compras de usuario
+    public function obtener_mis_compras() {
+        $id_usuario = $this->session->userdata('id_usuario');
+        $compras = $this->Venta_model->get_ventas_usuario($id_usuario);
+
+        echo json_encode($compras);
+    }
+
+    // Eliminar compra
+    public function eliminar_compra($id_detalle) {
+        if ($this->Venta_model->eliminar_detalle_venta($id_detalle)) {
+            echo json_encode(['success' => true, 'message' => 'Producto eliminado de tus compras.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'No se pudo eliminar la compra.']);
+        }
+    }
+  /*======================================================================================================================= */
     // Catálogo de productos
     public function productos() {
-        $id_usuario = $this->session->userdata('id_usuario');
-        $data['usuario']   = $this->Usuario_model->obtener_datos_usuario($id_usuario);
-        $data['titulo']    = 'Catálogo de Productos';
-        $data['productos'] = $this->Producto_model->get_productos_activos();
+        $id_usuario       = $this->session->userdata('id_usuario');
+        $data['usuario']  = $this->Usuario_model->obtener_datos_usuario($id_usuario);
+        $data['titulo']   = 'Catálogo de Productos';
+        $data['productos']= $this->Producto_model->get_productos_activos();
 
         $this->load->view('templates/header', $data);
         $this->load->view('cliente/productos', $data);
@@ -55,23 +81,11 @@ class Cliente extends CI_Controller {
         redirect('cliente/mis_compras');
     }
 
-    // Historial de compras
-    public function mis_compras() {
-        $id_usuario = $this->session->userdata('id_usuario');
-        $data['usuario'] = $this->Usuario_model->obtener_datos_usuario($id_usuario);
-        $data['titulo']  = 'Mis Compras';
-        $data['compras'] = $this->Venta_model->get_ventas_usuario($id_usuario);
-
-        $this->load->view('templates/header', $data);
-        $this->load->view('cliente/mis_compras', $data);
-        $this->load->view('templates/footer');
-    }
-
     // Perfil
     public function perfil() {
-        $id_usuario = $this->session->userdata('id_usuario');
-        $data['usuario'] = $this->Usuario_model->obtener_datos_usuario($id_usuario);
-        $data['titulo']  = 'Mi Perfil';
+        $id_usuario       = $this->session->userdata('id_usuario');
+        $data['usuario']  = $this->Usuario_model->obtener_datos_usuario($id_usuario);
+        $data['titulo']   = 'Mi Perfil';
 
         $this->load->view('templates/header', $data);
         $this->load->view('cliente/perfil', $data);
@@ -114,34 +128,36 @@ class Cliente extends CI_Controller {
         $id_usuario = $this->session->userdata('id_usuario');
 
         $data = array(
-            'compras_recientes'   => $this->Venta_model->get_ventas_recientes($id_usuario, 5),
-            'total_compras'       => $this->Venta_model->get_total_ventas_usuario($id_usuario),
-            'productos_destacados'=> $this->Producto_model->get_productos_destacados(3)
+            'compras_recientes'    => $this->Venta_model->get_ventas_recientes($id_usuario, 5),
+            'total_compras'        => $this->Venta_model->get_total_ventas_usuario($id_usuario),
+            'productos_destacados' => $this->Producto_model->get_productos_destacados(3)
         );
 
-        echo json_encode($data);
+        $this->output
+             ->set_content_type('application/json')
+             ->set_output(json_encode($data));
     }
 
-    // Comprar producto con cantidad personalizada ()
+    // Comprar producto con cantidad personalizada (AJAX)
     public function comprar_producto() {
         $id_producto = $this->input->post('id_producto');
         $cantidad    = $this->input->post('cantidad');
         $id_usuario  = $this->session->userdata('id_usuario');
 
         if (!$id_producto || !$cantidad || $cantidad < 1) {
-            echo json_encode(['success' => false, 'message' => 'Datos inválidos']);
-            return;
+            return $this->output->set_content_type('application/json')
+                                ->set_output(json_encode(['success' => false, 'message' => 'Datos inválidos']));
         }
 
         $producto = $this->Producto_model->get_producto($id_producto);
         if (!$producto) {
-            echo json_encode(['success' => false, 'message' => 'Producto no encontrado']);
-            return;
+            return $this->output->set_content_type('application/json')
+                                ->set_output(json_encode(['success' => false, 'message' => 'Producto no encontrado']));
         }
 
         if ($producto->stock < $cantidad) {
-            echo json_encode(['success' => false, 'message' => 'Stock insuficiente']);
-            return;
+            return $this->output->set_content_type('application/json')
+                                ->set_output(json_encode(['success' => false, 'message' => 'Stock insuficiente']));
         }
 
         $total    = $producto->precio * $cantidad;
@@ -150,30 +166,25 @@ class Cliente extends CI_Controller {
         if ($venta_id) {
             $this->Venta_model->crear_detalle_venta($venta_id, $id_producto, $cantidad, $producto->precio);
             $this->Producto_model->actualizar_stock($id_producto, -$cantidad);
-            echo json_encode(['success' => true, 'message' => 'Compra realizada con éxito']);
+            $response = ['success' => true, 'message' => 'Compra realizada con éxito'];
         } else {
-            echo json_encode(['success' => false, 'message' => 'Error al procesar la compra']);
+            $response = ['success' => false, 'message' => 'Error al procesar la compra'];
         }
+
+        return $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
-
+    // Buscar productos (AJAX)
     public function buscar_productos() {
-        $termino   = $this->input->post('termino');
+        $termino = $this->input->post('termino');
+
+        if (!$termino) {
+            return $this->output->set_content_type('application/json')
+                                ->set_output(json_encode([]));
+        }
+
         $productos = $this->Producto_model->buscar_productos($termino);
-        echo json_encode($productos);
+        return $this->output->set_content_type('application/json')
+                            ->set_output(json_encode($productos));
     }
-
- public function eliminar_compra($id_detalle)
-    {
-    $this->load->model('Venta_model');
-
-    if ($this->Venta_model->eliminar_detalle_venta($id_detalle)) {
-        $this->session->set_flashdata('exito', 'Producto eliminado de tus compras.');
-    } else {
-        $this->session->set_flashdata('error', 'No se pudo eliminar la compra.');
-    }
-
-    redirect('cliente/mis_compras');
-    }
-
 }
