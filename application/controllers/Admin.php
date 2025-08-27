@@ -21,6 +21,7 @@ class Admin extends CI_Controller {
         $this->load->view('templates/footer');
     }
 
+
     public function productos() {
         $data['productos'] = $this->Producto_model->get_productos();
         $data['titulo'] = "Gestionar Productos";
@@ -29,14 +30,52 @@ class Admin extends CI_Controller {
         $this->load->view('templates/footer');
     }
 
-    public function reportes() {
-        $data['reportes'] = $this->Venta_model->get_reportes_ventas();
-        $data['titulo'] = "Reportes de Ventas";
-        $this->load->view('templates/header', $data);
-        $this->load->view('admin/reportes', $data);
-        $this->load->view('templates/footer');
- 
+public function guardar_producto() {
+    $id = $this->input->post('id_producto');
+    $nombre = trim($this->input->post('nombre'));
+    $precio = floatval($this->input->post('precio'));
+    $stock = intval($this->input->post('stock'));
+    $descripcion = trim($this->input->post('descripcion'));
+    $imagen = $this->input->post('imagen') ?: 'https://via.placeholder.com/150';
+
+    // Validaciones
+    if(empty($nombre)) {
+        echo json_encode(['success'=>false, 'message'=>'El nombre es obligatorio']);
+        return;
     }
+    if($precio <= 0) {
+        echo json_encode(['success'=>false, 'message'=>'El precio debe ser mayor a 0']);
+        return;
+    }
+    if($stock < 0) {
+        echo json_encode(['success'=>false, 'message'=>'El stock no puede ser negativo']);
+        return;
+    }
+
+    $data = [
+        'nombre' => $nombre,
+        'precio' => $precio,
+        'stock' => $stock,
+        'descripcion' => $descripcion,
+        'imagen' => $imagen,
+        'activo' => 1
+    ];
+
+    if($id) {
+        $this->Producto_model->actualizar_producto($id, $data);
+        echo json_encode(['success'=>true, 'message'=>'Producto actualizado']);
+    } else {
+        $this->Producto_model->crear_producto($data);
+        echo json_encode(['success'=>true, 'message'=>'Producto creado']);
+    }
+}
+
+
+    public function cambiar_estado_producto($id_producto, $activo) {
+        $this->Producto_model->cambiar_estado($id_producto, $activo);
+        echo json_encode(['success'=>true]);
+    }
+
     // Guardar usuario
 public function guardar_usuario() {
     $id = $this->input->post('id_usuario');
@@ -64,6 +103,9 @@ public function guardar_usuario() {
         echo json_encode(['success'=>true, 'message'=>'Usuario creado']);
     }
 }
+
+
+
 
 // Cambiar estado
 public function cambiar_estado_usuario($id_usuario, $activo){

@@ -20,15 +20,6 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-info mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Mi Perfil</h5>
-                    <p class="card-text">Actualiza tu información personal</p>
-                    <a href="<?php echo site_url('cliente/perfil'); ?>" class="btn btn-light">Gestionar Perfil</a>
-                </div>
-            </div>
-        </div>
     </div>
     
     <div class="row mt-4">
@@ -60,11 +51,11 @@
         </div>
     </div>
 </div>
-
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script>
 $(document).ready(function() {
     $.ajax({
-        url: '<?php echo site_url("cliente/ajax_obtener_datos_dashboard"); ?>',
+        url: '<?php echo site_url("cliente/obtener_datos_dashboard"); ?>',
         type: 'POST',
         dataType: 'json',
         success: function(response) {

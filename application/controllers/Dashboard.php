@@ -15,6 +15,8 @@ class Dashboard extends CI_Controller {
         
         // Cargar modelos necesarios
         $this->load->model('Usuario_model');
+        $this->load->model('Producto_model');
+        $this->load->model('Venta_model');
     }
 
     public function index() {
@@ -67,7 +69,16 @@ class Dashboard extends CI_Controller {
             redirect('dashboard');
         }
         
-        $data['titulo'] = 'Panel de Empleado';
+        // Cargar datos para el dashboard del empleado
+        $data = array(
+            'titulo' => 'Panel de Empleado',
+            'total_productos' => $this->Producto_model->count_productos_activos(),
+            'total_ventas_hoy' => $this->Venta_model->count_ventas_hoy(),
+            'monto_ventas_hoy' => $this->Venta_model->get_total_ventas_hoy(),
+            'productos_bajo_stock' => $this->Producto_model->get_productos_bajo_stock(),
+            'ventas_recientes' => $this->Venta_model->get_ventas_hoy()
+        );
+        
         $this->load->view('templates/header', $data);
         $this->load->view('dashboard/empleado', $data);
         $this->load->view('templates/footer');

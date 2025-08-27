@@ -66,11 +66,6 @@
                                     <i class="fas fa-box me-1"></i>Productos
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="<?php echo site_url('admin/reportes'); ?>">
-                                    <i class="fas fa-chart-bar me-1"></i>Reportes
-                                </a>
-                            </li>
 
                         <?php elseif ($rol_actual == 1): // Cliente (ID 1) ?>
                             <li class="nav-item">
@@ -83,11 +78,7 @@
                                     <i class="fas fa-history me-1"></i>Mis Compras
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="<?php echo site_url('cliente/perfil'); ?>">
-                                    <i class="fas fa-user me-1"></i>Mi Perfil
-                                </a>
-                            </li>
+
 
                         <?php elseif ($rol_actual == 2): // Empleado (ID 2) ?>
                             <li class="nav-item">
@@ -115,11 +106,11 @@
                                 <?php endif; ?>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                <li>
+                             <!--   <li>
                                     <a class="dropdown-item" href="<?php echo site_url('perfil'); ?>">
                                         <i class="fas fa-user me-2"></i>Mi Perfil
                                     </a>
-                                </li>
+                                </li>-->
                                 <?php 
                                 $todos_roles = $this->session->userdata('todos_roles');
                                 if (!empty($todos_roles) && is_array($todos_roles) && count($todos_roles) > 1): 

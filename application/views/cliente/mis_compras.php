@@ -32,13 +32,12 @@
         <i class="fas fa-receipt fa-4x text-muted mb-3"></i>
         <h4 class="text-muted">Aún no has realizado compras</h4>
         <p class="text-muted">Cuando compres productos, aparecerán aquí.</p>
-        <a href="<?= site_url('cliente/catalogo'); ?>" class="btn btn-primary mt-3">
-            <i class="fas fa-shopping-cart"></i> Ir al catálogo
+        <a href="<?= site_url('cliente/productos'); ?>" class="btn btn-primary mt-3">
+            <i class="fas fa-shopping-cart"></i> Comprar AHora
         </a>
     </div>
 </div>
 
-<!-- JQuery + Script de AJAX -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function () {
